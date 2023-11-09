@@ -3,19 +3,14 @@ function [V, rho, a_rho_b, iters, elapsed_time] = trace_ratio_mat(sb, sw, p, k, 
     % Giulia Ferrandi Nov 3, 2023
     tstart = tic;
 
-    if rho < 0
+    if isempty(rho)
         [V, ~] = qr(randn(p, k), "econ");
         rho = tr_mat(V, sb) / tr_mat(V, sw);
     end
 
     for iters = 1:maxit
         % Compute eigenvectors
-        [V, eigenvalues] = eig(sb - rho * sw);
-
-        % Order eigenvectors
-        [eigenvalues, ind] = sort(diag(eigenvalues), 'descend');
-        ind = ind(1:k);
-        V = V(:, ind);
+        [V, ~] = compute_leading_eigenvectors(sb - rho * sw, k);
         
         % Update rho
         rho = tr_mat(V, sb) / tr_mat(V, sw);
