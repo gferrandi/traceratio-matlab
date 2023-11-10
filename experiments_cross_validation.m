@@ -4,6 +4,8 @@ load("datasets\german_train.mat")
 y = y + 1;
 fprintf('matrix has been loaded.\n')
 
+X = [X rand(size(X,1), 15000 - size(X,2))];
+
 % note: randn normal, rand uniform
 
 % Define parameters
@@ -47,7 +49,6 @@ for fold = 1:nfolds
     fprintf('matrices have been created in %g seconds\n', t_mat)
 
     for k = [10,20,25,30]
-        fprintf('fold %d\t k = %d\n', fold, k)
         % loop over k?
         m1 = 2*k;
         m2 = 5*k;
@@ -57,13 +58,14 @@ for fold = 1:nfolds
         else
             bsize = 2;
         end
+        fprintf('fold %d\t k = %d\t m1 = %d\t m2 = %d \t block = %d\n', fold, k, m1, m2, bsize)
     
         % Run algorithms
-        out5 = fit_and_predict(@trace_ratio_op, xtrain, ltrain, xtest, ltest, mva, mvb, p, k, m1, m2, 1, tol, maxit);
-        out1 = fit_and_predict(@fda_subspace_block, xtrain, ltrain, xtest, ltest, mva, mvb, p, k, m1, m2, 1, tol, maxit);
-        out2 = fit_and_predict(@fda_subspace_block, xtrain, ltrain, xtest, ltest, mva, mvb, p, k, m1, m2, bsize, tol, maxit);
-        out3 = fit_and_predict(@trace_ratio_subspace_block, xtrain, ltrain, xtest, ltest, mva, mvb, p, k, m1, m2, 1, tol, maxit);
-        out4 = fit_and_predict(@trace_ratio_subspace_block, xtrain, ltrain, xtest, ltest, mva, mvb, p, k, m1, m2, bsize, tol, maxit);
+        out5 = fit_and_predict(@trace_ratio_op,             xtrain, ltrain, xtest, ltest, mva, mvb, p, k, m1, m2, 1,     tol, maxit, shrinkage, sigma);
+        out1 = fit_and_predict(@fda_subspace_block,         xtrain, ltrain, xtest, ltest, mva, mvb, p, k, m1, m2, 1,     tol, maxit, shrinkage, sigma);
+        out2 = fit_and_predict(@fda_subspace_block,         xtrain, ltrain, xtest, ltest, mva, mvb, p, k, m1, m2, bsize, tol, maxit, shrinkage, sigma);
+        out3 = fit_and_predict(@trace_ratio_subspace_block, xtrain, ltrain, xtest, ltest, mva, mvb, p, k, m1, m2, 1,     tol, maxit, shrinkage, sigma);
+        out4 = fit_and_predict(@trace_ratio_subspace_block, xtrain, ltrain, xtest, ltest, mva, mvb, p, k, m1, m2, bsize, tol, maxit, shrinkage, sigma);
     
         tmpTable = struct2table([out1; out2; out3; out4; out5]);
         tmpTable.nfold = ones(5,1)*fold;
@@ -74,4 +76,4 @@ for fold = 1:nfolds
     end
 end
 
-writetable(resultsTable, 'outputs\german.csv')
+writetable(resultsTable, 'outputs\german_15k.csv')
