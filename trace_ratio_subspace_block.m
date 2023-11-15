@@ -26,7 +26,11 @@ function [V, eigenvalues, stats] = trace_ratio_subspace_block(mva, mvb, p, k, m1
         % STOPPING CRITERION
         [u, sigma, ~] = svd(R, "econ");
         res_norm = sigma(1,1);
-        %fprintf('j = %d\t rho: %g\t res %g\n',j, rho, res_norm);
+        vc = diag(sigma) >= 1e-4*res_norm;
+        bsize_tmp = min(sum(vc),bsize);
+        
+        %fprintf('j = %d\t rho: %g\t res %g\t bsize = %d\n',j, rho, res_norm, bsize_tmp);
+        
         
         % Check the stopping criterion
         if res_norm < tol
@@ -42,10 +46,12 @@ function [V, eigenvalues, stats] = trace_ratio_subspace_block(mva, mvb, p, k, m1
         end
 
         % BLOCK EXPANSION
-        [U, jold, j] = expand_subspace(U, j, m2, u(:, 1:bsize));
+        [U, jold, j] = expand_subspace(U, j, m2, u(:, 1:bsize_tmp));
 
         % Update AU, BU, H, K
         [AU, BU, H, K, mv_mult] = update_matrices(mva, mvb, U, AU, BU, H, K, j, jold, mv_mult);
+
+        %[U, AU, BU, H, K, j, mv_mult] = expand_subspace_and_update_matrices(mva, mvb, U, u(:,1:bsize_tmp), AU, BU, H, K, j, m2, mv_mult);
     end
 
     eigenvalues = sort(eig(a_rho_b), 'descend');
