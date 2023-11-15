@@ -2,8 +2,6 @@ function [V, eigenvalues, stats] = trace_ratio_op(mva, mvb, p, k, m1, m2, bsize,
     % TR KSchur
     % Giulia Ferrandi Nov 3, 2023
     
-    bsize = 1; % for compatibility with other methods
-    
     % trace ratio with matrices
     tstart = tic;
 
@@ -16,19 +14,23 @@ function [V, eigenvalues, stats] = trace_ratio_op(mva, mvb, p, k, m1, m2, bsize,
     
     for iters = 1:maxit
         % Compute eigenvectors
-        [V, eigenvalues, AV, BV, mv_mult_tmp, it_tmp] = krylov_schur_sym(mva, mvb, rho, p, k, m1, m2, 1, 1e-6, 100000);
+        if bsize == 1
+            [V, eigs, AV, BV, mv_mult_tmp, it_tmp] = krylov_schur_sym(mva, mvb, rho, p, k, m1, m2, bsize, 1e-7, 100000);
+        else
+            [V, eigs, AV, BV, mv_mult_tmp, it_tmp] = krylov_schur_block_sym(mva, mvb, rho, p, k, m1, m2, bsize, 1e-7, 100000);
+        end
         mv_mult = mv_mult + mv_mult_tmp;
         it = it + it_tmp;
         
         % Update rho
         rho = sum(diag(V' *AV)) / sum(diag(V' *BV));
-        % fprintf('mv %d\t iter %g\t rho %g\n', mv_mult_tmp, it_tmp, rho)
-
+        
         % Compute residual
         R = AV - rho * BV;
         a_rho_b = V' * R;
         R = R - V * a_rho_b;
         res_norm = norm(R, 2);
+        % fprintf('mv %d\t iter %g\t rho %g\t res %g\n', mv_mult_tmp, it_tmp, rho, res_norm)
 
         if res_norm < tol
             break;
