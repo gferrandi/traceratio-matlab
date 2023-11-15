@@ -25,7 +25,11 @@ function [half_sb, m, sw, gm] = compute_covariance_matrices(X, y, type_of_produc
 
     % Initialize group means and within covariance
     gm = zeros(g, p);
-    sw = zeros(p, p);
+    if strcmp(type_of_product, 'precomputed')
+        sw = zeros(p, p);
+    else
+        sw = 0;
+    end
     
     for i = 1:g
         dfi = X(y == labs(i), :);
