@@ -4,8 +4,9 @@ load("datasets\german_train.mat")
 y = y + 1;
 fprintf('matrix has been loaded.\n')
 
+% uncomment to add irrelevant features
 % note: randn normal, rand uniform
-X = [X rand(size(X,1), 15000 - size(X,2))];
+% X = [X rand(size(X,1), 15000 - size(X,2))];
 
 % Define parameters
 nfolds = 10; % number of folds
@@ -82,4 +83,4 @@ for fold = 1:nfolds
     end
 end
 
-writetable(resultsTable, 'outputs\german_15k.csv')
+writetable(resultsTable, 'outputs\german.csv')

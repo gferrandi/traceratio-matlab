@@ -6,6 +6,7 @@ fprintf('labels:\n')
 unique(y)
 fprintf('matrix has been loaded.\n')
 
+% uncomment to add irrelevant features
 %X = [X rand(size(X,1), 15000 - size(X,2))];
 fprintf('problem has %d data points and %d features\n', size(X,1), size(X,2))
 
@@ -52,7 +53,7 @@ for fold = 1:nfolds
 
     p = size(xtrain,2);
 
-    for shrinkage = [0.1]
+    for shrinkage = [0, 0.1]
         % Compute mva, mvb based on training data
         t_mat = tic;
         [mva, mvb] = define_mv_products(xtrain,ltrain,[],[],type_of_product,shrinkage,sigma);
@@ -60,23 +61,30 @@ for fold = 1:nfolds
         fprintf('matrices have been created in %g seconds, with regularization %g\n', t_mat, shrinkage)
     
         % Run algorithms
+        t_tmp = tic;
         out1 = fit_and_predict(@fda_subspace_block,         xtrain, ltrain, xtest, ltest, mva, mvb, p, k, m1, m2, 1,     tol, maxit, shrinkage, sigma);
         out2 = fit_and_predict(@fda_subspace_block,         xtrain, ltrain, xtest, ltest, mva, mvb, p, k, m1, m2, bsize, tol, maxit, shrinkage, sigma);
-        fprintf('end FDA\n')
+        fprintf('FDA subspace done in %g secs\n', toc(t_tmp))
+
+        t_tmp = tic;
         out3 = fit_and_predict(@trace_ratio_subspace_block, xtrain, ltrain, xtest, ltest, mva, mvb, p, k, m1, m2, 1,     tol, maxit, shrinkage, sigma);
         out4 = fit_and_predict(@trace_ratio_subspace_block, xtrain, ltrain, xtest, ltest, mva, mvb, p, k, m1, m2, bsize, tol, maxit, shrinkage, sigma);
-        fprintf('end TR sub\n')
-        out5 = fit_and_predict(@trace_ratio_op,             xtrain, ltrain, xtest, ltest, mva, mvb, p, k, m1, m2, 1,     tol, maxit, shrinkage, sigma);
-        fprintf('end TR KS\n')
+        fprintf('TR subspace done in %g secs\n', toc(t_tmp))
 
-        tmpTable = struct2table([out1; out2; out3; out4; out5]);
-        tmpTable.nfold = ones(5,1)*fold;
-        tmpTable.extra_time = ones(5,1)*t_mat;
-        tmpTable.reg = ones(5,1)*shrinkage;
+        t_tmp = tic;
+        out5 = fit_and_predict(@trace_ratio_op,             xtrain, ltrain, xtest, ltest, mva, mvb, p, k, m1, m2, 1,     tol, maxit, shrinkage, sigma);
+        out6 = fit_and_predict(@trace_ratio_op,             xtrain, ltrain, xtest, ltest, mva, mvb, p, k, m1, m2, bsize, tol, maxit, shrinkage, sigma);
+        fprintf('TR KSchur done in %g secs\n', toc(t_tmp))
+
+        tmpTable = struct2table([out1; out2; out3; out4; out5; out6]);
+        nrow = size(tmpTable,1);
+        tmpTable.nfold = ones(nrow,1)*fold;
+        tmpTable.extra_time = ones(nrow,1)*t_mat;
+        tmpTable.reg = ones(nrow,1)*shrinkage;
     
         % Append the results to the table
         resultsTable = [resultsTable; tmpTable];
     end
 end
 
-writetable(resultsTable, 'outputs\fashion_reg.csv')
+writetable(resultsTable, 'outputs\fashion.csv')
